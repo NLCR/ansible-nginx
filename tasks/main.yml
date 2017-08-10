@@ -28,9 +28,6 @@
   when: https.domain is defined
 
 - debug:
-    var: "{{ http.conf }}"
-
-- debug:
     var:  "{{ https.domain }}"
 
 #- name: 'Deploying Nginx HTTPS configuration.'
