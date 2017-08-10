@@ -6,3 +6,4 @@ nginx:
   csr: /etc/pki/tls/private
   crt: /etc/pki/tls/certs
   interm: /etc/pki/tls/certs
+#az sa pojde na produkciu, premenovat na RedHat.yml
