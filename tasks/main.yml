@@ -9,12 +9,12 @@
     name: nginx
   tags: nginx
 
-- name: Self-signed certificate ready for {{ ansible_nodename }}
-  command: 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=CZ/ST=Prague/L=Klementinum/O=NLCR/CN=rudolf.kreibich@nkp.cz" -keyout /etc/nginx/nginx-{{ ansible_nodename }}.key -out /etc/nginx/nginx-{{ ansible_nodename }}.crt'
-  args:
-    creates: '/etc/nginx/nginx-{{ ansible_nodename }}.crt'
-  notify: reload nginx
-  tags: nginx
+#- name: Self-signed certificate ready for {{ ansible_nodename }}
+#  command: 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=CZ/ST=Prague/L=Klementinum/O=NLCR/CN=rudolf.kreibich@nkp.cz" -keyout /etc/nginx/nginx-{{ ansible_nodename }}.key -out /etc/nginx/nginx-{{ ansible_nodename }}.crt'
+#  args:
+#    creates: '/etc/pki/tls/certs/nginxSS-{{ ansible_nodename }}.crt'
+#  notify: reload nginx
+#  tags: nginx
 
 - name: Nginx is started and survive restarts
   service:
@@ -22,3 +22,23 @@
     enabled: yes
   notify: start nginx
   tags: nginx
+
+- name: 'SSL Certification'
+  include: certbot.yml
+  when: https.domain is defined
+
+- debug:
+    var: "{{ http.conf }}"
+
+- debug:
+    var:  "{{ https.domain }}"
+
+#- name: 'Deploying Nginx HTTPS configuration.'
+#  template:
+#    src: "{{ https.conf }}"
+#    dest: "{{ nginx.conf }}/aggregatus.https.conf"
+            # {{ https.domain }}.https.conf"
+#    mode: 0644
+#  when:
+#    - https.domain is defined
+#    - https.conf is defined

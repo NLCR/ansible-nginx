@@ -1,0 +1,77 @@
+- name: 'Private key is ready here: {{ nginx.key }}/{{ https.domain }}.key'
+  command: openssl genrsa -out {{ nginx.key }}/{{ https.domain }}.key 2048
+  args:
+    creates: '{{ nginx.key }}/{{ https.domain }}.key'
+
+- name: "Private key for Let's Encrypt Account"
+  command: openssl genrsa -out {{ nginx.key }}/account.key 2048
+  args:
+    creates: '{{ nginx.key }}/account.key'
+
+- name: "Remove CSR and CRT"
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+    - '{{ nginx.csr }}/{{ https.domain }}.csr'
+    - '{{ nginx.crt }}/{{ https.domain }}.crt'
+#  when: '{{ remove_cert | default("False") | bool }}'
+  tags: remove_cert
+
+- name: 'Certifciate request is ready here: {{ nginx.csr }}/{{ https.domain }}.csr'
+  command: openssl req -new -sha256 -subj "{{ ssl_certs_fields }}" -key {{ nginx.key }}/{{ https.domain }}.key -out {{ nginx.csr }}/{{ https.domain }}.csr
+  args:
+    creates: '{{ nginx.csr }}/{{ https.domain }}.csr'
+
+#pak to slurpnut z https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem.txt
+- name: Creating CAintermed
+  template:
+    src: "{{ https.intermed }}"
+    dest: "{{ nginx.interm }}/{{ https.intermed }}"
+    mode: 0644
+  when: https.intermed is defined
+
+- name: "Requesting Let's encrypt challange for the domain."
+  letsencrypt:
+    account_key: '{{ nginx.key }}/account.key'
+    account_email: '{{ nginx_service_admin_email }}'
+    acme_directory: "{{ acme_directory | default('https://acme-staging.api.letsencrypt.org/directory') }}"
+    csr: '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
+    dest: '{{ nginx.crt }}/nginx-{{ https.domain }}.crt'
+  register: http_challenge
+
+- debug:
+    var: http_challenge.authorizations[0].identifier.value
+
+- debug:
+    var: ssl_certs_fields
+
+- debug:
+    var: acme_directory
+
+- name: Creating challenge dir
+  file:
+    path:  /srv/www/htdocs/webarchiv.cz/.well-known/acme-challenge/
+    state: directory
+
+- set_fact:
+    chell_dest: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['https.domain']['http-01']['resource']"
+    chell_content:  "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource_value']"
+
+- debug:
+    var: chell_content
+
+- name: Creating challenge file
+  copy:
+    dest: '/srv/www/htdocs/webarchiv.cz/{{ chell_dest }}'
+    content: '{{ chell_content }}'
+  when: http_challenge | changed
+
+- name: "Let's encrypt cert for domain: {{ https.domain }} is here: {{ nginx.crt }}/{{ https.domain }}"
+  letsencrypt:
+    account_key: '{{ nginx.key }}/account.key'
+    acme_directory: '{{ acme_directory | default("https://acme-staging.api.letsencrypt.org/directory") }}'
+    csr: '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
+    dest: '{{ nginx.crt }}/nginx-{{ https.domain }}.crt'
+    data: "{{ http_challenge }}"
+  ignore_errors: yes

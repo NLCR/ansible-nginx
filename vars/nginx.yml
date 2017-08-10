@@ -1,0 +1,8 @@
+---
+nginx:
+  service: nginx
+  conf: /etc/nginx/conf.d
+  key: /etc/pki/tls/private
+  csr: /etc/pki/tls/private
+  crt: /etc/pki/tls/certs
+  interm: /etc/pki/tls/certs
