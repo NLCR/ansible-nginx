@@ -53,28 +53,23 @@
 
 - name: Creating challenge dir
   file:
-    path:  /srv/www/htdocs/webarchiv.cz/.well-known/acme-challenge/
+    path:  /srv/www/htdocs/{{ https.domain }}/.well-known/acme-challenge/
     state: directory
+
+- set_fact:
+    chell_dest: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource'] }}"
+    chell_content: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource_value'] }}"
 
 - debug:
     var: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource']"
 
-- set_fact:
-    chell_interm: http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['https.domain']['http-01']['resource']
-
--  debug:
-     var: chell_interm
-
-- set_fact:
-    chell_dest: {"http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource']"}
-#    chell_content:  "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource_value']"
 - debug:
-    var: chell_dest
+    var: chell_content
 
 - name: Creating challenge file
   copy:
-    dest: '/srv/www/htdocs/webarchiv.cz/{{ chell_dest }}'
-    content: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource_value']"
+    dest: /srv/www/htdocs/{{ https.domain }}/{{ chell_dest }}
+    content: "chell_content"
   when: http_challenge | changed
 
 - name: "Let's encrypt cert for domain: {{ https.domain }} is here: {{ nginx.crt }}/nginx-{{ https.domain }}"
