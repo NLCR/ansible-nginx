@@ -30,9 +30,6 @@
   include: certbot.yml
   when: https.domain is defined
 
-- debug:
-    var:  "{{ https.domain }}"
-
 #- name: 'Deploying Nginx HTTPS configuration.'
 #  template:
 #    src: "{{ https.conf }}"

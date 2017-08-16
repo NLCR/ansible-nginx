@@ -46,14 +46,14 @@
 #    var: acme_directory
 
 - debug:
-    var: http_challenge['challenge_data']['seeder.webarchiv.cz']
+    var: http_challenge['challenge_data']['{{ https.domain }}']
 
 - debug:
     var: ssl_certs_fields
 
 - name: Creating challenge dir
   file:
-    path:  /srv/www/htdocs/{{ https.domain }}/.well-known/acme-challenge/
+    path:  /var/www/html/{{ https.domain }}/.well-known/acme-challenge/
     state: directory
 
 - set_fact:
@@ -68,9 +68,12 @@
 
 - name: Creating challenge file
   copy:
-    dest: /srv/www/htdocs/{{ https.domain }}/{{ chell_dest }}
-    content: "chell_content"
+    dest: /var/www/html/{{ https.domain }}/{{ chell_dest }}
+    content: "{{ chell_content }}"
   when: http_challenge | changed
+
+- debug:
+    var: http_challenge
 
 - name: "Let's encrypt cert for domain: {{ https.domain }} is here: {{ nginx.crt }}/nginx-{{ https.domain }}"
   letsencrypt:
