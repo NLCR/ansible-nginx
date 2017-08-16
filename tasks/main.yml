@@ -29,13 +29,21 @@
 - name: 'SSL Certification'
   include: certbot.yml
   when: https.domain is defined
+#  register: result
 
-#- name: 'Deploying Nginx HTTPS configuration.'
-#  template:
-#    src: "{{ https.conf }}"
-#    dest: "{{ nginx.conf }}/aggregatus.https.conf"
+- debug:
+    var: result
+
+- name: 'Deploying Nginx HTTPS configuration for {{ https.domain }}.'
+  template:
+   src: "{{ https.conf }}"
+   dest: "{{ nginx.conf }}/{{ https.domain }}.https.conf"
             # {{ https.domain }}.https.conf"
-#    mode: 0644
-#  when:
-#    - https.domain is defined
-#    - https.conf is defined
+   mode: 0644
+#  when: result|succeeded
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+#  when: SSL_certification_task|succeeded

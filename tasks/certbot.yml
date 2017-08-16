@@ -60,11 +60,11 @@
     chell_dest: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource'] }}"
     chell_content: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource_value'] }}"
 
-- debug:
-    var: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource']"
+#- debug:
+#    var: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource']"
 
-- debug:
-    var: chell_content
+#- debug:
+#    var: chell_content
 
 - name: Creating challenge file
   copy:
