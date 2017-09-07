@@ -1,15 +1,21 @@
 ---
-- name: restart nginx
-  service: 
-    name: nginx 
+- name: Restart nginx
+  service:
+    name: nginx
     state: restarted
 
-- name: reload nginx
+- name: Shutdown nginx
+  service:
+    name: nginx
+    state: stopped
+
+- name: Reload nginx
   service:
     name: nginx
     state: reloaded
 
-- name: start nginx
-  service: 
+- name: Start nginx
+  service:
     name: nginx
     state: started
+    enabled: yes

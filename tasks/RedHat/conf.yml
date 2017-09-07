@@ -1,0 +1,6 @@
+- name: 'Nginx configuration: {{ conf.enabled }}/{{ item.domains[0] }}.conf'
+  template:
+    src: nginx-proxy.conf.j2
+    dest: '{{ conf.enabled }}/{{ item.domains[0] }}.conf'
+    backup: yes
+  notify: Reload nginx

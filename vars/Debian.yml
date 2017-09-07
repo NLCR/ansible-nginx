@@ -1,0 +1,13 @@
+---
+acme_challenge_path: /var/www/html # nginx should serve this directory
+
+conf:
+  available: /etc/nginx/sites-available
+  enabled: /etc/nginx/sites-enabled
+
+ssl:
+  key_home: /etc/ssl/private
+  csr_home: /etc/ssl/private
+  cert_home: /etc/ssl/certs
+  pem_home: /etc/ssl/certs
+  dhparam: /etc/ssl/certs/dhparams.pem

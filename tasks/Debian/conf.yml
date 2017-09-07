@@ -1,0 +1,13 @@
+- name: 'Nginx configuration deployed: {{ conf.available }}/{{ item.domains[0] }}.conf'
+  template:
+    src: nginx-proxy.conf.j2
+    dest: '{{ conf.available }}/{{ item.domains[0] }}.conf'
+    backup: yes
+
+- name: 'Nginx configuration enabled: {{ conf.enabled }}/{{ item.domains[0] }}.conf'
+  file:
+    state: '{{ item.state | default("link") }}'
+    src: '{{ conf.available }}/{{ item.domains[0] }}.conf'
+    dest: '{{ conf.enabled }}/{{ item.domains[0] }}.conf'
+  notify: Reload nginx
+  ignore_errors: "{{ ansible_check_mode }}"

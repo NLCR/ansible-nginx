@@ -1,0 +1,4 @@
+- name: '{{ ansible_os_family }} Yum provision.'
+  yum:
+    name: certbot,python2-certbot-nginx
+    state: present

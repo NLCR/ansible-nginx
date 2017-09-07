@@ -1,0 +1,11 @@
+- name: 'Nginx configuration for ACME challange deployed'
+  template:
+    src: nginx-acme-challenge.conf.j2
+    dest: '{{ conf.enabled }}/acme-challenge.conf'
+    backup: yes
+
+- name: Test nginx before handlers are flushed
+  command: nginx -t
+
+- name: Flush handlers
+  meta: flush_handlers
