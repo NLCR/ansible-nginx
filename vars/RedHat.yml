@@ -1,9 +1,12 @@
 ---
-nginx:
-  service: nginx
-  conf: /etc/nginx/conf.d
-  key: /etc/pki/tls/private
-  csr: /etc/pki/tls/private
-  crt: /etc/pki/tls/certs
-  interm: /etc/pki/tls/certs
-#az sa pojde na produkciu, premenovat na RedHat.yml
+acme_challenge_path: /usr/share/nginx/html # nginx should serve this directory
+
+conf:
+  enabled: /etc/nginx/conf.d
+
+ssl:
+  key_home: /etc/pki/tls/private
+  csr_home: /etc/pki/tls/private
+  cert_home: /etc/pki/tls/certs
+  pem_home: /etc/pki/tls/certs
+  dhparam: /etc/pki/tls/certs/dhparam.pem

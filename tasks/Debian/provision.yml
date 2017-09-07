@@ -1,0 +1,6 @@
+- name: '{{ ansible_os_family }} APT: provision.'
+  apt:
+    name: nginx,python-apt,letsencrypt
+    state: '{{ packages_state | default("present") }}'
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags: packages

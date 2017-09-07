@@ -1,0 +1,66 @@
+server {
+  listen 80;
+  server_name {{ item.domains | join (" ") }};
+
+  # HTTP Server for ACME challenge
+  location /.well-known/acme-challenge {
+    root {{ acme_challenge_path }}/;
+  }
+
+  location / {
+{% if item.allow is defined %}
+{% for ip in item.allow %}
+    allow {{ ip }};
+{% endfor %}
+    deny all;
+{% endif %}
+
+    return 301 https://$server_name$request_uri;
+  }
+}
+
+upstream {{ item.name }} {
+  server {{ item.url }} fail_timeout=0;
+}
+
+# HTTPS server
+#
+server {
+  listen 443;
+  server_name {{ item.domains | join (" ") }};
+  client_max_body_size 8m;
+  ignore_invalid_headers off;
+
+  root html;
+  index index.html index.htm;
+
+  ssl on;
+  ssl_certificate {{ certbot.home }}/live/{{ item.domains[0] }}/fullchain.pem;
+  ssl_certificate_key {{ certbot.home }}/live/{{ item.domains[0] }}/privkey.pem;
+  ssl_dhparam {{ ssl.dhparam }};
+
+  ssl_session_timeout 5m;
+
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+  ssl_prefer_server_ciphers on;
+
+  location / {
+
+    proxy_set_header        Host $host:$server_port;
+    proxy_set_header        X-Real-IP $remote_addr;
+    proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header        X-Forwarded-Proto $scheme;
+    proxy_redirect http:// https://;
+{% if item.proxy_pass is defined %}
+    proxy_pass              {{ item.proxy_pass }};
+{% else %}
+    proxy_pass              http://{{ item.name }};
+{% endif %}
+  }
+
+{% if item.logs is defined %}
+  error_log         {{ item.logs }}/nginx-error.log;
+  access_log        {{ item.logs }}/nginx-access.log;
+{% endif %}
+}

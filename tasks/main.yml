@@ -1,41 +1,36 @@
----
-- name: EPEL repository installed
-  yum:
-    name: epel-release
-  tags: nginx
+- name: '{{ ansible_os_family }} playbook: provision.'
+  include: '{{ ansible_os_family }}/provision.yml'
+  notify: Start nginx
 
-- name: Nginx installed
-  yum:
-    name: nginx
-  tags: nginx
-
-- name: OS specific variables are ready
+- name: '{{ ansible_os_family }} variables: included.'
   include_vars: '{{ ansible_os_family }}.yml'
+  tags: certbot
 
-#- name: Self-signed certificate ready for {{ ansible_nodename }}
-#  command: 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=CZ/ST=Prague/L=Klementinum/O=NLCR/CN=rudolf.kreibich@nkp.cz" -keyout /etc/nginx/nginx-{{ ansible_nodename }}.key -out /etc/nginx/nginx-{{ ansible_nodename }}.crt'
-#  args:
-#    creates: '/etc/pki/tls/certs/nginxSS-{{ ansible_nodename }}.crt'
-#  notify: reload nginx
-#  tags: nginx
+- name: 'Diffie-Hellman {{ crypt.dhparam }} bit: {{ ssl.dhparam }}'
+  command: openssl dhparam -out {{ ssl.dhparam }} {{ crypt.dhparam }}
+  args:
+    creates: '{{ ssl.dhparam }}'
 
-- name: Nginx is started and survive restarts
-  service:
-    name: nginx
-    enabled: yes
-  notify: start nginx
-  tags: nginx
+- name: 'Nginx configuration for ACME challange deployed'
+  include: acme.yml
 
-- name: 'SSL Certification'
-  include: certbot.yml
-  when: https.domain is defined
+- name: 'TLS for domains: {{ services|map(attribute="domains")|join(" ") }}'
+  include: '{{ method | default ("certbot") }}.yml'
 
-#- name: 'Deploying Nginx HTTPS configuration.'
-#  template:
-#    src: "{{ https.conf }}"
-#    dest: "{{ nginx.conf }}/aggregatus.https.conf"
-            # {{ https.domain }}.https.conf"
-#    mode: 0644
-#  when:
-#    - https.domain is defined
-#    - https.conf is defined
+- name: Deploying new configuration
+  include: '{{ ansible_os_family }}/conf.yml'
+  with_items: '{{ services }}'
+  notify: Reload nginx
+
+- name: Robots.txt deployed
+  copy:
+    content: '{{ robots }}'
+    dest: '{{ acme_challenge_path }}/robots.txt'
+  tags: config
+  when: robots_content is defined
+  notify:
+  - reload nginx
+  - reload uwsgi
+
+- name: Test nginx before handlers are flushed
+  command: nginx -t

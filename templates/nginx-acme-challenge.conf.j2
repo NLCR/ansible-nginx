@@ -1,0 +1,8 @@
+# HTTP Server for ACME challenge
+server {
+
+  location /.well-known/acme-challenge {
+    root {{ acme_challenge_path }}/;
+  }
+
+}

@@ -1,0 +1,19 @@
+- name: '{{ ansible_os_family }} Apt provision: software-properties-common'
+  apt:
+    name: software-properties-common
+    state: present
+    update_cache: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: '{{ ansible_os_family }} Apt repositories ready.'
+  apt_repository:
+    repo: ppa:certbot/certbot
+    state: present
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: '{{ ansible_os_family }} Apt provision: python-certbot-nginx'
+  apt:
+    name: python-certbot-nginx
+    state: present
+    update_cache: yes
+  ignore_errors: "{{ ansible_check_mode }}"

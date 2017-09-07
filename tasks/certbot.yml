@@ -1,85 +1,20 @@
-- name: 'Private key is ready here: {{ nginx.key }}/nginx-{{ https.domain }}.key'
-  command: openssl genrsa -out {{ nginx.key }}/nginx-{{ https.domain }}.key 2048
+# https://certbot.eff.org/docs/using.html
+- name: '{{ ansible_os_family }} playbook: provision.'
+  include: '{{ ansible_os_family }}/certbot-provision.yml'
+
+# 10 Signed certs per floating week | https://letsencrypt.org/docs/rate-limits/
+- name: 'Certbot gets Signed cert using webroot'
+  command: >
+    certbot certonly
+    --webroot
+    --webroot-path  {{ acme_challenge_path }}
+    --non-interactive
+    --agree-tos
+    --expand
+    --preferred-challenges http
+    --email '{{ subj.email }}'
+    --domains "{{ item.domains | join(', ') }}"
+  tags: certbot
+  with_items: '{{ services }}'
   args:
-    creates: '{{ nginx.key }}/nginx-{{ https.domain }}.key'
-
-- name: "Private key for Let's Encrypt Account"
-  command: openssl genrsa -out {{ nginx.key }}/account.key 2048
-  args:
-    creates: '{{ nginx.key }}/account.key'
-
-- name: "Remove CSR and CRT"
-  file:
-    path: '{{ item }}'
-    state: absent
-  with_items:
-    - '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
-    - '{{ nginx.crt }}/nginx-{{ https.domain }}.crt'
-#  when: '{{ remove_cert | default("False") | bool }}'
-  tags: remove_cert
-
-- name: 'Certifciate request is ready here: {{ nginx.csr }}/nginx-{{ https.domain }}.csr'
-  command: openssl req -new -sha256 -subj "{{ ssl_certs_fields }}" -key {{ nginx.key }}/nginx-{{ https.domain }}.key -out {{ nginx.csr }}/nginx-{{ https.domain }}.csr
-  args:
-    creates: '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
-
-#pak to slurpnut z https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem.txt
-- name: Creating CAintermed
-  template:
-    src: "{{ https.intermed }}"
-    dest: "{{ nginx.interm }}/{{ https.intermed }}"
-    mode: 0644
-  when: https.intermed is defined
-
-- name: "Requesting Let's encrypt challange for the domain."
-  letsencrypt:
-    account_key: '{{ nginx.key }}/account.key'
-    account_email: '{{ nginx_service_admin_email }}'
-    acme_directory: "{{ acme_directory | default('https://acme-staging.api.letsencrypt.org/directory') }}"
-    csr: '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
-    dest: '{{ nginx.crt }}/nginx-{{ https.domain }}.crt'
-  register: http_challenge
-
-#- debug:
-#    var: http_challenge.authorizations[0].identifier.value
-#- debug:
-#    var: acme_directory
-
-- debug:
-    var: http_challenge['challenge_data']['{{ https.domain }}']
-
-- debug:
-    var: ssl_certs_fields
-
-- name: Creating challenge dir
-  file:
-    path:  /var/www/html/{{ https.domain }}/.well-known/acme-challenge/
-    state: directory
-
-- set_fact:
-    chell_dest: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource'] }}"
-    chell_content: "{{ http_challenge['challenge_data'][http_challenge.authorizations[0].identifier.value]['http-01']['resource_value'] }}"
-
-- debug:
-    var: "http_challenge['challenge_data']['{{ http_challenge.authorizations[0].identifier.value }}']['http-01']['resource']"
-
-- debug:
-    var: chell_content
-
-- name: Creating challenge file
-  copy:
-    dest: /var/www/html/{{ https.domain }}/{{ chell_dest }}
-    content: "{{ chell_content }}"
-  when: http_challenge | changed
-
-- debug:
-    var: http_challenge
-
-- name: "Let's encrypt cert for domain: {{ https.domain }} is here: {{ nginx.crt }}/nginx-{{ https.domain }}"
-  letsencrypt:
-    account_key: '{{ nginx.key }}/account.key'
-    acme_directory: '{{ acme_directory | default("https://acme-staging.api.letsencrypt.org/directory") }}'
-    csr: '{{ nginx.csr }}/nginx-{{ https.domain }}.csr'
-    dest: '{{ nginx.crt }}/nginx-{{ https.domain }}.crt'
-    data: "{{ http_challenge }}"
-  ignore_errors: yes
+    creates: '{{ certbot.home }}/live/{{ item.domains[0] }}/fullchain.pem'
