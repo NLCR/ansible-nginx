@@ -1,34 +1,18 @@
 ---
-# defaults file for NLCR.nginx
-#specific variables for certification of certification.yml
-nginx_webroot: "/var/www/webarchiv.cz/public_html"
-#www-data
-nginx_service_host: www.webarchiv.cz
-nginx_service_admin_email: webarchiv@nkp.cz
-nginx.service_name: []
-nginx_service_root_directory: /var/www/
-nginx_https_domain: []
-nginx_http_conf: []
-nginx_https_conf: []
+# For sake of simplicity, we do not use CSR for Let's Encrypt. Using default Certbot values.
+subj:
+  country: CZ
+  locality: Klementinum
+  organization: National Library of the Czech Republic
+  state: Prague
+  days: 90
+  email: webarchiv@nkp.cz
 
-https: []
-#  domain:
-#  conf:
-http: []
-#  domain:
-#  conf:
+cert:
+  subj: /C="{{ subj.country }}"/ST="{{ subj.state }}"/L="{{ subj.locality }}"/O="{{ subj.organization }}"
 
-ssl_cert_country: "CZ"
-ssl_cert_locality: "Klementinum"
-ssl_cert_organization: "NLCR"
-ssl_cert_state: "Prague"
-ssl_cert_days: "365"
-ssl_cert_email: "webarchiv@nkp.cz"
-#oprava na multidomaine
-ssl_certs_common_name: '{{ http.domain }}'
+certbot:
+  home: /etc/letsencrypt
 
-
-ssl_certs_fields: "/C={{ssl_cert_country}}/ST={{ssl_cert_state}}/L={{ssl_cert_locality}}/O={{ssl_cert_organization}}/CN={{ssl_certs_common_name}}"
-
-
-#zbytocne ssl_csr_path: "/etc/ssl/{{ssl_cert_common_name}}"
+crypt:
+  dhparam: 2048 # 1024 is unsafe, 2048 is recommanded, 4096 is best but slow
